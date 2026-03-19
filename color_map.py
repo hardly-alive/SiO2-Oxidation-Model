@@ -1,13 +1,9 @@
-def wavelength_to_rgb(wavelength_nm: float) -> tuple[int, int, int]:
-    """
-    Converts a given wavelength (nm) to an RGB tuple (0-255).
-    Expanded slightly to 380-780nm to capture full human vision.
-    """
-    gamma = 0.80
-    intensity_max = 255
-    factor = 0.0
-    R = G = B = 0.0
+import math
 
+def wavelength_to_rgb(wavelength_nm: float) -> tuple[float, float, float]:
+    """
+    Returns raw 0.0 to 1.0 RGB values for a specific wavelength.
+    """
     if 380 <= wavelength_nm <= 440:
         R = -(wavelength_nm - 440) / (440 - 380)
         G = 0.0
@@ -33,8 +29,9 @@ def wavelength_to_rgb(wavelength_nm: float) -> tuple[int, int, int]:
         G = 0.0
         B = 0.0
     else:
-        return (0, 0, 0) 
+        return 0.0, 0.0, 0.0
 
+    # Intensity fall-off near edges of human vision
     if 380 <= wavelength_nm <= 420:
         factor = 0.3 + 0.7 * (wavelength_nm - 380) / (420 - 380)
     elif 420 < wavelength_nm <= 700:
@@ -44,51 +41,43 @@ def wavelength_to_rgb(wavelength_nm: float) -> tuple[int, int, int]:
     else:
         factor = 0.0
 
-    def adjust(color, factor):
-        if color == 0.0:
-            return 0
-        return int(round(intensity_max * (color * factor) ** gamma))
-
-    return adjust(R, factor), adjust(G, factor), adjust(B, factor)
+    return (R * factor, G * factor, B * factor)
 
 
 def thickness_to_color(thickness_nm: float) -> str:
     """
-    Maps oxide thickness to a hex color using the thin-film interference equation:
-    2 * n_ox * x_o = (m + 1/2) * lambda
+    Maps oxide thickness to a hex color using Visible Spectrum Integration.
+    This avoids the flaws of discrete-wavelength mapping by simulating 
+    broad-spectrum white light reflection.
     """
-    N_OX = 1.46 
+    N_OX = 1.46
     
-    if thickness_nm < 30:
-        return "#A9A9A9" # Bare Silicon / Very thin oxide
+    # Base Silicon (Silver/Grey)
+    if thickness_nm < 2:
+        return "#A9A9A9"
 
-    valid_rgbs = []
-    closest_wavelength = None
-    min_dist = float('inf')
+    sum_r, sum_g, sum_b = 0.0, 0.0, 0.0
     
-    for m in range(5):
-        wavelength = (2 * N_OX * thickness_nm) / (m + 0.5)
+    # Integrate over the visible spectrum (380nm to 780nm)
+    for wl in range(380, 781, 5):
+        # Calculate reflection intensity for this specific wavelength
+        # Intensity scales with cos^2(2 * pi * n * x / lambda) for SiO2 on Si
+        phase = (2 * math.pi * N_OX * thickness_nm) / wl
+        intensity = math.cos(phase) ** 2
         
-        # Track the wavelength closest to the center of visible spectrum (~550nm)
-        dist_to_center = abs(wavelength - 550)
-        if dist_to_center < min_dist:
-            min_dist = dist_to_center
-            closest_wavelength = wavelength
+        # Add the weighted color to our total reflection
+        r, g, b = wavelength_to_rgb(wl)
+        sum_r += r * intensity
+        sum_g += g * intensity
+        sum_b += b * intensity
         
-        # Use an expanded visible spectrum
-        if 380 <= wavelength <= 780:
-            rgb = wavelength_to_rgb(wavelength)
-            valid_rgbs.append(rgb)
-
-    # If no wavelengths fell in the visible spectrum (UV/IR gaps), 
-    # clamp the closest one to the edge of the visible spectrum.
-    if not valid_rgbs and closest_wavelength is not None:
-        clamped_wl = max(380.0, min(780.0, closest_wavelength))
-        valid_rgbs.append(wavelength_to_rgb(clamped_wl))
-         
-    # Average the RGB values
-    avg_r = int(sum(c[0] for c in valid_rgbs) / len(valid_rgbs))
-    avg_g = int(sum(c[1] for c in valid_rgbs) / len(valid_rgbs))
-    avg_b = int(sum(c[2] for c in valid_rgbs) / len(valid_rgbs))
-
-    return f"#{avg_r:02x}{avg_g:02x}{avg_b:02x}"
+    # Normalize the accumulated light to valid 0-255 RGB values
+    max_val = max(sum_r, sum_g, sum_b, 1.0)
+    
+    # Apply a slight gamma correction (0.8) to emulate realistic, non-neon oxide colors
+    gamma = 0.80
+    final_r = int(255 * ((sum_r / max_val) ** gamma))
+    final_g = int(255 * ((sum_g / max_val) ** gamma))
+    final_b = int(255 * ((sum_b / max_val) ** gamma))
+    
+    return f"#{final_r:02x}{final_g:02x}{final_b:02x}"

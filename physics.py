@@ -10,13 +10,13 @@ OXIDATION_PARAMS = {
         "Ea_B": 1.24,       # eV
         "Ea_BA": 2.00,      # eV
         "B_0": 772.0,       # um^2/hr (Pre-exponential for Parabolic)
-        "BA_0": 6.23e6,     # um/hr (Pre-exponential for Linear)
+        "BA_0": 3.71e6,     # um/hr (Pre-exponential for Linear)
     },
     "wet": {
         "Ea_B": 0.78,       # eV
         "Ea_BA": 2.05,      # eV
         "B_0": 386.0,       # um^2/hr
-        "BA_0": 1.63e8,     # um/hr
+        "BA_0": 9.70e7,     # um/hr
     }
 }
 
