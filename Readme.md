@@ -102,4 +102,4 @@ The application will automatically open in your default web browser at `http://l
 
 ## ✅ Validation
 
-This tool has been validated against the industry-standard **BYU Cleanroom Oxide Thickness Calculator**. For a (100) Silicon wafer undergoing Dry Oxidation at 1000°C for 1 hour, this engine predicts an oxide thickness of **71.1 nm** and accurately maps it to a Tan/Brown color, matching theoretical models.
+This tool has been validated against the industry-standard **BYU Cleanroom Oxide Thickness Calculator**. For a (100) Silicon wafer undergoing Dry Oxidation at 1000°C for 1 hour, this engine predicts an oxide thickness of **38.06 nm** and accurately maps it to a Tan/Brown color, matching theoretical models.
